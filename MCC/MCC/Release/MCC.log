@@ -1,0 +1,11 @@
+﻿  Source.cpp
+Source.cpp(17): warning C4091: 'typedef ': ignored on left of 'dirinfo' when no variable is declared
+Source.cpp(287): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+Source.cpp(382): warning C4091: 'typedef ': ignored on left of 'wordtree' when no variable is declared
+  Generating code
+  20 of 156 functions (12.8%) were compiled, the rest were copied from previous compilation.
+    0 functions were new in current compilation
+    15 functions had inline decision re-evaluated but remain unchanged
+  Finished generating code
+  MCC.vcxproj -> C:\Users\JH\documents\visual studio 2015\Projects\MCC\Release\MCC.exe
+  MCC.vcxproj -> C:\Users\JH\documents\visual studio 2015\Projects\MCC\Release\MCC.pdb (Full PDB)
