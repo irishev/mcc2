@@ -481,7 +481,7 @@ void addwordtf(char* a, int k) {
 			p = p->next[a[i] - 97];
 		}
 	}
-	p->tf = k;
+	p->tf += k;
 }
 
 void calcval(char* path) {
@@ -489,7 +489,7 @@ void calcval(char* path) {
 	char line[256];
 	while (iFile.getline(line, 255)) {
 		char** k = retjson(line);
-		int l;
+		int l = 0;
 		for (int i=0; k[1][i]; i++)
 			l = l * 10 + k[1][i] - 48;
 		addwordtf(k[0],l);
@@ -506,49 +506,97 @@ void inittree(wordtree* p) {
 			inittree(p->next[i]);
 	}
 }
-int documentset = 0;
+int documentset = 953876;
 char curword2[16] = { 0 };
 int pos2 = 0;
 void outcc(wordtree* p, ofstream& file) {
-	if (pos2 > 15) {
+	if (pos2 > 14) {
 		pos2--;
 		return;
 	}
+	//cout << curword2 << endl;
 	if (p->tf)
 		file << curword2 << ":" << log10((double)documentset/p->df) * p->tf << endl;
 	for (int i = 0; i < 26; i++) {
 		if (p->next[i]) {
-			curword[pos2++] = i + 97;
+			curword2[pos2++] = i + 97;
 			outcc(p->next[i], file);
 		}
 	}
 	curword2[pos2] = 0;
-	pos2--;
+	if(pos2)
+		pos2--;
 }
-void findtf(char* path) {
+
+void checknum(char* path) {
+	documentset = 0;
 	long h_file;
-	char* search = new char[256];
-	char* filepath = new char[256];
+	char* search = new char[512];
+	char* filepath = new char[512];
 	FILE_SEARCH file_search;
 	sprintf(search, "%s/*.*", path);
 	if ((h_file = _findfirst(search, &file_search)) == -1L) {
 		return;
 	}
 	else {
-		inittree(&dftree);
+		do {
+			sprintf(filepath, "%s", file_search.name);
+			if (!strcmp(filepath, "cc.dat") || !strcmp(filepath, ".") || !strcmp(filepath, ".."))
+				continue;
+			if (file_search.attrib & _A_SUBDIR) {
+
+			}
+			else {
+				sprintf(filepath, "%s%s", path, file_search.name);
+				documentset++;
+			}
+		} while (_findnext(h_file, &file_search) == 0);
+
+
+		_findclose(h_file);
+		h_file = _findfirst(search, &file_search);
 		do {
 			sprintf(filepath, "%s", file_search.name);
 			if (!strcmp(filepath, ".") || !strcmp(filepath, ".."))
 				continue;
-			
+			if (file_search.attrib & _A_SUBDIR) {
+
+				sprintf(filepath, "%s%s/", path, file_search.name);
+				checknum(filepath);
+			}
+		} while (_findnext(h_file, &file_search) == 0);
+		_findclose(h_file);
+	}
+
+	delete[] search;
+	delete[] filepath;
+}
+
+void findtf(char* path) {
+	long h_file;
+	char* search = new char[512];
+	char* filepath = new char[512];
+	FILE_SEARCH file_search;
+	sprintf(search, "%s/*.*", path);
+	if ((h_file = _findfirst(search, &file_search)) == -1L) {
+		return;
+	}
+	else {				
+		inittree(&dftree);
+		do {
+			sprintf(filepath, "%s", file_search.name);
+			if (!strcmp(filepath, "cc.dat") || !strcmp(filepath, ".") || !strcmp(filepath, ".."))
+				continue;
+			if (file_search.attrib & _A_SUBDIR) {
+
+			}
 			else {
-				documentset++;
 				sprintf(filepath, "%s%s", path, file_search.name);
 				calcval(filepath);
 			}
 		} while (_findnext(h_file, &file_search) == 0);
 		char temp[256];
-		sprintf(temp, "%s/cc.dat", path);
+		sprintf(temp, "%scc.dat", path);
 		ofstream oFile(temp);
 		outcc(&dftree, oFile);
 		oFile.close();
@@ -557,9 +605,12 @@ void findtf(char* path) {
 		h_file = _findfirst(search, &file_search);
 		do {
 			sprintf(filepath, "%s", file_search.name);
+			if (!strcmp(filepath, ".") || !strcmp(filepath, ".."))
+				continue;
 			if (file_search.attrib & _A_SUBDIR) {
+
 				sprintf(filepath, "%s%s/", path, file_search.name);
-				finddf(filepath);
+				findtf(filepath);
 			}
 		} while (_findnext(h_file, &file_search) == 0);
 		_findclose(h_file);
@@ -583,7 +634,7 @@ void evaluate() {
 			k = k * 10 + temp[i] - 48;
 		addword(temp, k);
 	}
-	findtf("D:/MCC/Top");
+	findtf("D:/MCC/Top/");
 }
 
 void main() {
@@ -591,9 +642,13 @@ void main() {
 	//taxonomy();
 	//createdir();
 	//parsing2();
-	char path[100] = "D:/MCC/Top/";
+	/*char path[100] = "D:/MCC/Top/";
 	finddf(path);
 	ofstream oFile("D:/MCC/df.dat");
 	writedf(&root, oFile);
 	oFile.close();
+	*/
+	/*checknum("D:/MCC/Top/");
+	cout << documentset;*/
+	evaluate();
 }
