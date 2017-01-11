@@ -6,6 +6,7 @@
 #include <vector>
 #include <io.h>
 #include <Windows.h>
+#include <math.h>
 
 #define N_DESC 20
 
@@ -377,6 +378,7 @@ void parsing2() {
 typedef struct _finddata_t FILE_SEARCH;
 
 typedef struct wordtree {
+	int tf = 0;
 	int df = 0;
 	wordtree* next[26] = { 0 };
 };
@@ -455,6 +457,133 @@ void finddf(char* path) {
 	
 	delete[] search;
 	delete[] filepath;
+}
+wordtree dftree;
+void addword(char* a, int k) {
+	wordtree* p = &dftree;
+	for (int i = 0; a[i]; i++) {
+		if (p->next[a[i] - 97])
+			p = p->next[a[i] - 97];
+		else {
+			p->next[a[i] - 97] = new wordtree;
+			p = p->next[a[i] - 97];
+		}
+	}
+	p->df = k;
+}
+void addwordtf(char* a, int k) {
+	wordtree* p = &dftree;
+	for (int i = 0; a[i]; i++) {
+		if (p->next[a[i] - 97])
+			p = p->next[a[i] - 97];
+		else {
+			p->next[a[i] - 97] = new wordtree;
+			p = p->next[a[i] - 97];
+		}
+	}
+	p->tf = k;
+}
+
+void calcval(char* path) {
+	ifstream iFile(path);
+	char line[256];
+	while (iFile.getline(line, 255)) {
+		char** k = retjson(line);
+		int l;
+		for (int i=0; k[1][i]; i++)
+			l = l * 10 + k[1][i] - 48;
+		addwordtf(k[0],l);
+		delete[] k[0];
+		delete[] k[1];
+		delete[] k;
+	}
+}
+
+void inittree(wordtree* p) {
+	for (int i = 0; i < 26; i++) {
+		p->tf = 0;
+		if (p->next[i])
+			inittree(p->next[i]);
+	}
+}
+int documentset = 0;
+char curword2[16] = { 0 };
+int pos2 = 0;
+void outcc(wordtree* p, ofstream& file) {
+	if (pos2 > 15) {
+		pos2--;
+		return;
+	}
+	if (p->tf)
+		file << curword2 << ":" << log10((double)documentset/p->df) * p->tf << endl;
+	for (int i = 0; i < 26; i++) {
+		if (p->next[i]) {
+			curword[pos2++] = i + 97;
+			outcc(p->next[i], file);
+		}
+	}
+	curword2[pos2] = 0;
+	pos2--;
+}
+void findtf(char* path) {
+	long h_file;
+	char* search = new char[256];
+	char* filepath = new char[256];
+	FILE_SEARCH file_search;
+	sprintf(search, "%s/*.*", path);
+	if ((h_file = _findfirst(search, &file_search)) == -1L) {
+		return;
+	}
+	else {
+		inittree(&dftree);
+		do {
+			sprintf(filepath, "%s", file_search.name);
+			if (!strcmp(filepath, ".") || !strcmp(filepath, ".."))
+				continue;
+			
+			else {
+				documentset++;
+				sprintf(filepath, "%s%s", path, file_search.name);
+				calcval(filepath);
+			}
+		} while (_findnext(h_file, &file_search) == 0);
+		char temp[256];
+		sprintf(temp, "%s/cc.dat", path);
+		ofstream oFile(temp);
+		outcc(&dftree, oFile);
+		oFile.close();
+
+		_findclose(h_file);
+		h_file = _findfirst(search, &file_search);
+		do {
+			sprintf(filepath, "%s", file_search.name);
+			if (file_search.attrib & _A_SUBDIR) {
+				sprintf(filepath, "%s%s/", path, file_search.name);
+				finddf(filepath);
+			}
+		} while (_findnext(h_file, &file_search) == 0);
+		_findclose(h_file);
+	}
+
+	delete[] search;
+	delete[] filepath;
+}
+
+
+
+void evaluate() {
+	ifstream iFile("D:/MCC/df.dat");
+	char temp[128];
+	while (iFile.getline(temp, 127)) {
+		int k = 0;
+		int i = 0;
+		for (; temp[i] != ':'; i++);
+		temp[i++] = 0;
+		for (; temp[i]; i++)
+			k = k * 10 + temp[i] - 48;
+		addword(temp, k);
+	}
+	findtf("D:/MCC/Top");
 }
 
 void main() {
