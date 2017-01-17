@@ -380,6 +380,7 @@ typedef struct _finddata_t FILE_SEARCH;
 typedef struct wordtree {
 	int tf = 0;
 	int df = 0;
+	double ccv = 0;
 	wordtree* next[26] = { 0 };
 };
 
@@ -471,6 +472,8 @@ void addword(char* a, int k) {
 	}
 	p->df = k;
 }
+int documentset = 953876;
+double length2 = 0;
 void addwordtf(char* a, int k) {
 	wordtree* p = &dftree;
 	for (int i = 0; a[i]; i++) {
@@ -482,8 +485,25 @@ void addwordtf(char* a, int k) {
 		}
 	}
 	p->tf += k;
+	length2 += log10((double)documentset / p->df) * p->tf * log10((double)documentset / p->df) * p->tf;
 }
 
+void normalize(wordtree* p) {
+	double length = sqrt(length2);
+	if (p->tf)
+		p->ccv += log10((double)documentset / p->df) * p->tf / length;
+	for (int i = 0; i < 26; i++) {
+		if (p->next[i]) 
+			normalize(p->next[i]);
+	}
+}
+void inittf(wordtree* p) {
+	for (int i = 0; i < 26; i++) {
+		p->tf = 0;
+		if (p->next[i])
+			inittf(p->next[i]);
+	}
+}
 void calcval(char* path) {
 	ifstream iFile(path);
 	char line[256];
@@ -497,30 +517,34 @@ void calcval(char* path) {
 		delete[] k[1];
 		delete[] k;
 	}
+	normalize(&dftree);
+	inittf(&dftree);
+	length2 = 0;
 }
 
 void inittree(wordtree* p) {
 	for (int i = 0; i < 26; i++) {
 		p->tf = 0;
+		p->ccv = 0;
 		if (p->next[i])
 			inittree(p->next[i]);
 	}
 }
-int documentset = 953876;
+
 char curword2[16] = { 0 };
 int pos2 = 0;
-void outcc(wordtree* p, ofstream& file) {
+void outcc(wordtree* p, ofstream& file, int num) {
 	if (pos2 > 14) {
 		pos2--;
 		return;
 	}
 	//cout << curword2 << endl;
-	if (p->tf)
-		file << curword2 << ":" << log10((double)documentset/p->df) * p->tf << endl;
+	if (p->ccv)
+		file << curword2 << ":" << p->ccv / num << endl;
 	for (int i = 0; i < 26; i++) {
 		if (p->next[i]) {
 			curword2[pos2++] = i + 97;
-			outcc(p->next[i], file);
+			outcc(p->next[i], file, num);
 		}
 	}
 	curword2[pos2] = 0;
@@ -576,6 +600,7 @@ void findtf(char* path) {
 	long h_file;
 	char* search = new char[512];
 	char* filepath = new char[512];
+	int num = 0;
 	FILE_SEARCH file_search;
 	sprintf(search, "%s/*.*", path);
 	if ((h_file = _findfirst(search, &file_search)) == -1L) {
@@ -591,6 +616,7 @@ void findtf(char* path) {
 
 			}
 			else {
+				num++;
 				sprintf(filepath, "%s%s", path, file_search.name);
 				calcval(filepath);
 			}
@@ -598,7 +624,8 @@ void findtf(char* path) {
 		char temp[256];
 		sprintf(temp, "%scc.dat", path);
 		ofstream oFile(temp);
-		outcc(&dftree, oFile);
+		if(num)
+			outcc(&dftree, oFile, num);
 		oFile.close();
 
 		_findclose(h_file);
@@ -636,6 +663,165 @@ void evaluate() {
 	}
 	findtf("D:/MCC/Top/");
 }
+int copy(char *exist, char *anew) {
+	FILE *fexist, *fanew;
+	char a;
+	if ((fexist = fopen(exist, "rb")) == NULL)
+		return -1;
+	if ((fanew = fopen(anew, "wb")) == NULL){
+		fclose(fexist);
+		return -1;
+	}
+	while (1) {
+		a = fgetc(fexist);
+		if (!feof(fexist))
+			fputc(a, fanew);
+		else
+			break;
+	}
+	fclose(fexist);
+	fclose(fanew);
+	
+	return 0;
+}
+void copyfromold(char* path) {
+	long h_file;
+	char* search = new char[512];
+	char* filepath = new char[512];
+	FILE_SEARCH file_search;
+	sprintf(search, "%s/*.*", path);
+	if ((h_file = _findfirst(search, &file_search)) == -1L) {
+		return;
+	}
+	else {
+		inittree(&dftree);
+		do {
+			sprintf(filepath, "%s", file_search.name);
+			if (!strcmp(filepath, ".") || !strcmp(filepath, ".."))
+				continue;
+			if (file_search.attrib & _A_SUBDIR) {
+				sprintf(filepath, "%s%s/", path, file_search.name);
+				copyfromold(filepath);
+			}
+			
+		} while (_findnext(h_file, &file_search) == 0);
+		_findclose(h_file);
+		h_file = _findfirst(search, &file_search);
+		do {
+			sprintf(filepath, "%s", file_search.name);
+			if (!strcmp(filepath, ".") || !strcmp(filepath, ".."))
+				continue;
+			if (file_search.attrib & _A_SUBDIR) {
+
+			}
+			else {
+				if (!strcmp(filepath, "cc.dat")) {
+					char t1[512];
+					char t2[512];
+					sprintf(t1, "%scc.dat", path);
+					int k = 0;
+					sprintf(t2, "D:/MCC/%s", &path[10]);
+					for (; t2[k]; k++);
+					t2[k - 1] = 0;
+					sprintf(t2, "%s.dat", t2);
+					copy(t1, t2);
+				}
+			}
+		} while (_findnext(h_file, &file_search) == 0);
+		_findclose(h_file);
+	}
+
+	delete[] search;
+	delete[] filepath;
+}
+
+void addwordccv(char* a, double k) {
+	wordtree* p = &dftree;
+	for (int i = 0; a[i]; i++) {
+		if (p->next[a[i] - 97])
+			p = p->next[a[i] - 97];
+		else {
+			p->next[a[i] - 97] = new wordtree;
+			p = p->next[a[i] - 97];
+		}
+	}
+	p->ccv += k;
+}
+
+void readcc(char* path) {
+	ifstream iFile(path);
+	char temp[128];
+	iFile.getline(temp, 127);
+	double value = strtod(temp, NULL);
+	int i = 0;
+	while (temp[i]!=':') {
+		i++;
+	}
+	temp[i] = 0;
+	addwordccv(temp, value);
+}
+
+void outmcc(wordtree* p, ofstream& file) {
+	if (pos2 > 14) {
+		pos2--;
+		return;
+	}
+	//cout << curword2 << endl;
+	if (p->tf)
+		file << curword2 << ":" << log10((double)documentset / p->df) * p->tf << endl;
+	for (int i = 0; i < 26; i++) {
+		if (p->next[i]) {
+			curword2[pos2++] = i + 97;
+			//outcc(p->next[i], file);
+		}
+	}
+	curword2[pos2] = 0;
+	if (pos2)
+		pos2--;
+}
+
+void calmcc(char* path) {
+	long h_file;
+	char* search = new char[512];
+	char* filepath = new char[512];
+	FILE_SEARCH file_search;
+	sprintf(search, "%s/*.*", path);
+	if ((h_file = _findfirst(search, &file_search)) == -1L) {
+		return;
+	}
+	else {
+		inittree(&dftree);
+		do {
+			sprintf(filepath, "%s", file_search.name);
+			if (!strcmp(filepath, ".") || !strcmp(filepath, ".."))
+				continue;
+			if (file_search.attrib & _A_SUBDIR) {
+				sprintf(filepath, "%s%s/", path, file_search.name);
+				calmcc(filepath);
+			}
+
+		} while (_findnext(h_file, &file_search) == 0);
+		_findclose(h_file);
+		h_file = _findfirst(search, &file_search);
+		do {
+			sprintf(filepath, "%s", file_search.name);
+			if (!strcmp(filepath, ".") || !strcmp(filepath, ".."))
+				continue;
+			if (file_search.attrib & _A_SUBDIR) {
+
+			}
+			else {
+				sprintf(filepath, "%s%s/", path, file_search.name);
+				readcc(filepath);
+			}
+		} while (_findnext(h_file, &file_search) == 0);
+		_findclose(h_file);
+
+	}
+
+	delete[] search;
+	delete[] filepath;
+}
 
 void main() {
 	//parsing();
@@ -650,5 +836,7 @@ void main() {
 	*/
 	/*checknum("D:/MCC/Top/");
 	cout << documentset;*/
-	evaluate();
+	//evaluate();
+	copyfromold("D:/MCCold/Top/");
+	//calmcc("D:/MCC/Top/");
 }
