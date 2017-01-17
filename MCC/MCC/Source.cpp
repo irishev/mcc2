@@ -735,6 +735,7 @@ void copyfromold(char* path) {
 	delete[] filepath;
 }
 
+double cclength2 = 0;
 void addwordccv(char* a, double k) {
 	wordtree* p = &dftree;
 	for (int i = 0; a[i]; i++) {
@@ -745,20 +746,33 @@ void addwordccv(char* a, double k) {
 			p = p->next[a[i] - 97];
 		}
 	}
-	p->ccv += k;
+	p->ccv += k / sqrt(cclength2);
 }
 
 void readcc(char* path) {
-	ifstream iFile(path);
+    ifstream prep(path);
+    char pretemp[128];
+    while(prep.getline(pretemp,127)){
+        double prevalue = strtod(pretemp, NULL);
+        cclength2 += prevalue * prevalue;
+    }
+    prep.close();
+    
+    ifstream iFile(path);
 	char temp[128];
-	iFile.getline(temp, 127);
-	double value = strtod(temp, NULL);
-	int i = 0;
-	while (temp[i]!=':') {
-		i++;
-	}
-	temp[i] = 0;
-	addwordccv(temp, value);
+    while(iFile.getline(temp, 127)){
+        double value = strtod(temp, NULL);
+        int i = 0;
+        while (temp[i]!=':') {
+            i++;
+        }
+        temp[i] = 0;
+        addwordccv(temp, value);
+    }
+    iFile.close();
+    
+    
+    cclength2=0;
 }
 
 void outmcc(wordtree* p, ofstream& file) {
@@ -772,7 +786,7 @@ void outmcc(wordtree* p, ofstream& file) {
 	for (int i = 0; i < 26; i++) {
 		if (p->next[i]) {
 			curword2[pos2++] = i + 97;
-			//outcc(p->next[i], file);
+			//outmcc(p->next[i], file);
 		}
 	}
 	curword2[pos2] = 0;
@@ -780,12 +794,14 @@ void outmcc(wordtree* p, ofstream& file) {
 		pos2--;
 }
 
+
 void calmcc(char* path) {
 	long h_file;
 	char* search = new char[512];
 	char* filepath = new char[512];
 	FILE_SEARCH file_search;
 	sprintf(search, "%s/*.*", path);
+    int num=1;
 	if ((h_file = _findfirst(search, &file_search)) == -1L) {
 		return;
 	}
@@ -802,17 +818,28 @@ void calmcc(char* path) {
 
 		} while (_findnext(h_file, &file_search) == 0);
 		_findclose(h_file);
+        
+        string tempstr = path;
+        int pivot = tempstr.find_last_of('/');
+        string prevpath = tempstr.substr(0,pivot);
+        string curcat = tempstr.substr(pivot+1);
+        
+        string ccpath = prevpath + "/" + curcat + ".dat";
+        readcc(ccpath.c_str());
+        
+        
 		h_file = _findfirst(search, &file_search);
 		do {
 			sprintf(filepath, "%s", file_search.name);
-			if (!strcmp(filepath, ".") || !strcmp(filepath, ".."))
+			if (!strcmp(filepath, "mcc.dat") || !strcmp(filepath, ".") || !strcmp(filepath, ".."))
 				continue;
 			if (file_search.attrib & _A_SUBDIR) {
 
 			}
 			else {
 				sprintf(filepath, "%s%s/", path, file_search.name);
-				readcc(filepath);
+                num++;
+                readcc(filepath);
 			}
 		} while (_findnext(h_file, &file_search) == 0);
 		_findclose(h_file);
@@ -837,6 +864,6 @@ void main() {
 	/*checknum("D:/MCC/Top/");
 	cout << documentset;*/
 	//evaluate();
-	copyfromold("D:/MCCold/Top/");
+	//copyfromold("D:/MCCold/Top/");
 	//calmcc("D:/MCC/Top/");
 }
