@@ -820,6 +820,7 @@ void calmcc(char* path) {
 		_findclose(h_file);
         
         string tempstr = path;
+        tempstr.pop_back();
         int pivot = tempstr.find_last_of('/');
         string prevpath = tempstr.substr(0,pivot);
         string curcat = tempstr.substr(pivot+1);
@@ -837,12 +838,22 @@ void calmcc(char* path) {
 
 			}
 			else {
-				sprintf(filepath, "%s%s/", path, file_search.name);
+				sprintf(filepath, "%s%s", path, file_search.name);
+                int i=0;
+                while(filepath[i])
+                    i++;
+                filepath[i-4]=0;
+                string newpath = filepath;
+                newpath += "/mcc.dat";
                 num++;
-                readcc(filepath);
+                readcc(newpath.c_str());
 			}
 		} while (_findnext(h_file, &file_search) == 0);
 		_findclose(h_file);
+        ccpath = prevpath + "/" + curcat + "/mcc.dat";
+        
+        ofstream oFile(ccpath.c_str());
+        outcc(&dftree, &oFile, num);
 
 	}
 
