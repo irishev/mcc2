@@ -487,7 +487,7 @@ void addwordtf(char* a, int k) {
 	p->tf += k;
 	length2 += log10((double)documentset / p->df) * p->tf * log10((double)documentset / p->df) * p->tf;
 }
-
+/*
 void normalize(wordtree* p) {
 	double length = sqrt(length2);
 	if (p->tf)
@@ -496,7 +496,7 @@ void normalize(wordtree* p) {
 		if (p->next[i]) 
 			normalize(p->next[i]);
 	}
-}
+}*/
 void inittf(wordtree* p) {
 	for (int i = 0; i < 26; i++) {
 		p->tf = 0;
@@ -517,7 +517,7 @@ void calcval(char* path) {
 		delete[] k[1];
 		delete[] k;
 	}
-	normalize(&dftree);
+	//normalize(&dftree);
 	inittf(&dftree);
 	length2 = 0;
 }
@@ -746,6 +746,7 @@ void addwordccv(char* a, double k) {
 			p = p->next[a[i] - 97];
 		}
 	}
+	
 	p->ccv += k / sqrt(cclength2);
 }
 
@@ -753,7 +754,9 @@ void readcc(char* path) {
     ifstream prep(path);
     char pretemp[128];
     while(prep.getline(pretemp,127)){
-        double prevalue = strtod(pretemp, NULL);
+		int i = 1;
+		while (pretemp[i++] != ':');
+        double prevalue = strtod(pretemp+i, NULL);
         cclength2 += prevalue * prevalue;
     }
     prep.close();
@@ -761,12 +764,13 @@ void readcc(char* path) {
     ifstream iFile(path);
 	char temp[128];
     while(iFile.getline(temp, 127)){
-        double value = strtod(temp, NULL);
         int i = 0;
         while (temp[i]!=':') {
             i++;
         }
-        temp[i] = 0;
+		temp[i++] = 0;
+		double value = strtod(temp+i, NULL);
+        
         addwordccv(temp, value);
     }
     iFile.close();
@@ -826,7 +830,9 @@ void calmcc(char* path) {
         string curcat = tempstr.substr(pivot+1);
         
         string ccpath = prevpath + "/" + curcat + ".dat";
-        readcc(ccpath.c_str());
+		char temp[512];
+		strcpy(temp, ccpath.c_str());
+        readcc(temp);
         
         
 		h_file = _findfirst(search, &file_search);
@@ -846,15 +852,17 @@ void calmcc(char* path) {
                 string newpath = filepath;
                 newpath += "/mcc.dat";
                 num++;
-                readcc(newpath.c_str());
+				strcpy(temp, newpath.c_str());
+                readcc(temp);
 			}
 		} while (_findnext(h_file, &file_search) == 0);
 		_findclose(h_file);
         ccpath = prevpath + "/" + curcat + "/mcc.dat";
-        
-        ofstream oFile(ccpath.c_str());
-        outcc(&dftree, &oFile, num);
-
+		if (num) {
+			ofstream oFile(ccpath.c_str());
+			outcc(&dftree, oFile, num);
+			inittree(&dftree);
+		}
 	}
 
 	delete[] search;
@@ -876,5 +884,5 @@ void main() {
 	cout << documentset;*/
 	//evaluate();
 	//copyfromold("D:/MCCold/Top/");
-	//calmcc("D:/MCC/Top/");
+	calmcc("D:/MCC/Top/");
 }
