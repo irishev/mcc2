@@ -1,0 +1,10 @@
+<<<<<<< HEAD
+﻿  MCC.vcxproj -> C:\Users\JH\Documents\GitHub\mcc\MCC\Debug\MCC.exe
+=======
+﻿  Source.cpp
+c:\users\jh\documents\github\mcc\mcc\mcc\source.cpp(18): warning C4091: 'typedef ': 변수를 선언하지 않으면 'dirinfo' 왼쪽은 무시됩니다.
+c:\users\jh\documents\github\mcc\mcc\mcc\source.cpp(288): warning C4244: '=': 'double'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+c:\users\jh\documents\github\mcc\mcc\mcc\source.cpp(385): warning C4091: 'typedef ': 변수를 선언하지 않으면 'wordtree' 왼쪽은 무시됩니다.
+  MCC.vcxproj -> C:\Users\JH\Documents\GitHub\mcc\MCC\Debug\MCC.exe
+>>>>>>> origin/master
+  MCC.vcxproj -> C:\Users\JH\Documents\GitHub\mcc\MCC\Debug\MCC.pdb (Partial PDB)

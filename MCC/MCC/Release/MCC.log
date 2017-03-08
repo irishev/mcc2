@@ -1,0 +1,23 @@
+﻿  Source.cpp
+<<<<<<< HEAD
+Source.cpp(25): warning C4091: 'typedef ': ignored on left of 'dirinfo' when no variable is declared
+Source.cpp(341): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+Source.cpp(397): warning C4018: '<': signed/unsigned mismatch
+Source.cpp(464): warning C4091: 'typedef ': ignored on left of 'wordtree' when no variable is declared
+  Generating code
+  1 of 366 functions ( 0.3%) were compiled, the rest were copied from previous compilation.
+    0 functions were new in current compilation
+    1 functions had inline decision re-evaluated but remain unchanged
+  Finished generating code
+=======
+Source.cpp(18): warning C4091: 'typedef ': 변수를 선언하지 않으면 'dirinfo' 왼쪽은 무시됩니다.
+Source.cpp(288): warning C4244: '=': 'double'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+Source.cpp(385): warning C4091: 'typedef ': 변수를 선언하지 않으면 'wordtree' 왼쪽은 무시됩니다.
+  코드를 생성하고 있습니다.
+  2 of 215 functions ( 0.9%) were compiled, the rest were copied from previous compilation.
+    0 functions were new in current compilation
+    11 functions had inline decision re-evaluated but remain unchanged
+  코드를 생성했습니다.
+>>>>>>> origin/master
+  MCC.vcxproj -> C:\Users\JH\Documents\GitHub\mcc\MCC\Release\MCC.exe
+  MCC.vcxproj -> C:\Users\JH\Documents\GitHub\mcc\MCC\Release\MCC.pdb (Full PDB)
